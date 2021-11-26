@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Reservation extends Model
 {
     use HasFactory;
+    const STATUS_ACTIVE = 1;
+    const STATUS_CANCALLED = 2;
+
 
     protected $casts = [
         'price' => 'integer',
@@ -26,6 +29,4 @@ class Reservation extends Model
     {
         return $this->belongsTo(Office::class);
     }
-
-
 }
