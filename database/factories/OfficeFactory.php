@@ -29,4 +29,18 @@ class OfficeFactory extends Factory
 
         ];
     }
+
+    public function pending(): Factory
+    {
+        return $this->state([
+            'approval_status' => Office::APPROVAL_PENDING,
+        ]);
+    }
+
+    public function hidden(): Factory
+    {
+        return $this->state([
+            'hidden' => true,
+        ]);
+    }
 }

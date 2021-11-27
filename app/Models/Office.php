@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,6 @@ class Office extends Model
     use HasFactory, SoftDeletes;
     const APPROVAL_PENDING = 1;
     const APPROVAL_APPROVED = 2;
-    const APPROVAL_REJECTED = 3;
 
 
     protected $casts = [
@@ -42,7 +42,7 @@ class Office extends Model
         return $this->morphMany(Image::class, 'resource');
     }
 
-     public function tags(): BelongsToMany
+    public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'offices_tags');
     }
