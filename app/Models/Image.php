@@ -10,7 +10,7 @@ class Image extends Model
 {
     use HasFactory;
 
-    public function resource()
+    public function resource(): MorphTo
     {
         return $this->morphTo();
     }

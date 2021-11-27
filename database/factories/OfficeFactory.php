@@ -9,24 +9,30 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class OfficeFactory extends Factory
 {
     /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Office::class;
+
+    /**
      * Define the model's default state.
      *
      * @return array
      */
-    public function definition()
+    public function definition(): array
     {
         return [
             'user_id' => User::factory(),
-            'title' => $this->faker->sentence,
+            'title' => $this->faker->city,
             'description' => $this->faker->paragraph,
             'lat' => $this->faker->latitude,
             'lng' => $this->faker->longitude,
             'address_line1' => $this->faker->address,
             'approval_status' => Office::APPROVAL_APPROVED,
-            'hidden' => $this->faker->hidden,
-            'price_per_day' => $this->faker->numberBetween(1_000, 2_000),
-            'monthly_discoun' => 0,
-
+            'hidden' => false,
+            'price_per_day' => $this->faker->randomElement([1_000, 2_000, 3_000, 4_000]),
+            'monthly_discount' => 0
         ];
     }
 

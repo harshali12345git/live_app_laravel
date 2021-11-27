@@ -2,25 +2,24 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class TagsControllerTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     *
-     * @return void
-     */
+    use LazilyRefreshDatabase;
 
-     public function itListsTags()
-     {
-        $response = $this->get('/api/tags');
+    /**
+     * @test
+     */
+    public function itListsTags()
+    {
+        $response = $this->get('/tags');
 
         $response->assertStatus(200);
-        $this->assertNotNull($response->json('data')[0]['id']);
-     }
 
-    
+        $this->assertNotNull($response->json('data')[0]['id']);
+    }
 }

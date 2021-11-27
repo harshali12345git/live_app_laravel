@@ -14,9 +14,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Office extends Model
 {
     use HasFactory, SoftDeletes;
+
     const APPROVAL_PENDING = 1;
     const APPROVAL_APPROVED = 2;
-
 
     protected $casts = [
         'lat' => 'decimal:8',
@@ -40,6 +40,11 @@ class Office extends Model
     public function images(): MorphMany
     {
         return $this->morphMany(Image::class, 'resource');
+    }
+
+    public function featuredImage(): BelongsTo
+    {
+        return $this->belongsTo(Image::class, 'featured_image_id');
     }
 
     public function tags(): BelongsToMany

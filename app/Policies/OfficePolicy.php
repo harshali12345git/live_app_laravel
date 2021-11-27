@@ -6,7 +6,6 @@ use App\Models\Office;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-
 class OfficePolicy
 {
     use HandlesAuthorization;
