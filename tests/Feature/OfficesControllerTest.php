@@ -46,21 +46,21 @@ class OfficesControllerTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
-    public function itFiltersByHostId()
+    public function itFiltersByUserId()
     {
         Office::factory(3)->create();
         $host = User::factory()->create();
         $office = Office::factory()->for($host)->create();
 
         $response = $this->get(
-            '/api/offices?host_id=' . $host->id
+            '/api/offices?user_id=' . $host->id
         );
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
         $this->assertEquals($office->id, $response->json('data')[0]['id']);
     }
 
-    public function itFiltersByUserId()
+    public function itFiltersByVisitorId()
     {
         Office::factory(3)->create();
         $user = User::factory()->create();
@@ -70,7 +70,7 @@ class OfficesControllerTest extends TestCase
         Reservation::factory()->for($office)->for($user)->create();
 
         $response = $this->get(
-            '/api/offices?user_id=' . $user->id
+            '/api/offices?visitor_id=' . $user->id
         );
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
@@ -87,6 +87,10 @@ class OfficesControllerTest extends TestCase
 
         $office->tags()->attach($tag);
         $office->images()->create(['path' => 'image.jpg']);
+
+        dd(
+            $office->image()
+        );
 
         $response = $this->get('/api/offices');
 
@@ -137,6 +141,51 @@ class OfficesControllerTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.0.title', 'Leiria')
             ->assertJsonPath('data.1.title', 'Torres Vedras');
+    }
+
+      /**
+     * @test
+     */
+    public function itCreatesAnOffice()
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $user = User::factory()->create();
+        $tags = Tag::factory(2)->create();
+
+        Sanctum::actingAs($user, ['*']);
+
+        $response = $this->postJson('/offices', Office::factory()->raw([
+            'tags' => $tags->pluck('id')->toArray()
+        ]));
+
+        $response->assertCreated()
+            ->assertJsonPath('data.approval_status', Office::APPROVAL_PENDING)
+            ->assertJsonPath('data.reservations_count', 0)
+            ->assertJsonPath('data.user.id', $user->id)
+            ->assertJsonCount(2, 'data.tags');
+
+        $this->assertDatabaseHas('offices', [
+            'id' => $response->json('data.id')
+        ]);
+
+        Notification::assertSentTo($admin, OfficePendingApproval::class);
+    }
+
+        /**
+     * @test
+     */
+    public function itDoesntAllowCreatingIfScopeIsNotProvided()
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user, []);
+
+        $response = $this->postJson('/offices');
+
+        $response->assertForbidden();
     }
     public function itShowsTheOffice()
     {

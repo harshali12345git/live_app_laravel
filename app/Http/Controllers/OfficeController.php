@@ -17,11 +17,11 @@ class OfficeController extends Controller
         $offices = Office::query()
             ->where('approval_statua', Office::APPROVAL_APPROVED)
             ->where('hidden', false)
-            ->when(request('host_id'), fn ($builder) => $builder->whereUserId(request('host_id')))
+            ->when(request('user_id'), fn ($builder) => $builder->whereUserId(request('user_id')))
             ->when(
-                request('user_id'),
+                request('visitor_id'),
                 fn (Builder $builder)
-                => $builder->whereRelation('reservations', 'user_id', '=', request('user_id'))
+                => $builder->whereRelation('reservations', 'user_id', '=', request('visitor_id'))
             )
             ->when(
                 request('lat') && request('lng'),
@@ -36,6 +36,39 @@ class OfficeController extends Controller
         );
     }
 
+    public function create(): JsonResource
+    {
+        abort_unless(auth()->user()->tokenCan('office.create'),
+            Response::HTTP_FORBIDDEN
+        );
+
+        $attributes = (new OfficeValidator())->validate(
+            $office = new Office(),
+            request()->all()
+        );
+
+        $attributes['approval_status'] = Office::APPROVAL_PENDING;
+        $attributes['user_id'] = auth()->id();
+
+        $office = DB::transaction(function () use ($office, $attributes) {
+            $office->fill(
+                Arr::except($attributes, ['tags'])
+            )->save();
+
+            if (isset($attributes['tags'])) {
+                $office->tags()->attach($attributes['tags']);
+            }
+
+            return $office;
+        });
+
+        Notification::send(User::where('is_admin', true)->get(), new OfficePendingApproval($office));
+
+        return OfficeResource::make(
+            $office->load(['images', 'tags', 'user'])
+        );
+
+    }
     public function show(Office $office)
     {
         $office->loadCount(['reservations' => fn ($builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
