@@ -11,3 +11,4 @@ Route::get('/tags', [TagController::class]);
 
 Route::get('/tags', TagController::class);
 Route::get('/offices', [OfficeController::class, 'index']);
+Route::post('/offices', [OfficeController::class, 'create'])->middleware(['auth:sanctum', 'verified']);
