@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Office;
+use App\Models\Reservation;
+use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -29,7 +32,7 @@ class OfficesControllerTest extends TestCase
      *
      * @return void
      */
-   
+
     public function itOnlyListsOfficesThatAreNotHiddenAndApproved()
     {
         Office::factory(3)->create();
@@ -46,15 +49,15 @@ class OfficesControllerTest extends TestCase
     public function itFiltersByHostId()
     {
         Office::factory(3)->create();
-        $host=User::factory()->create();
-       $office = Office::factory()->for($host)->create();
+        $host = User::factory()->create();
+        $office = Office::factory()->for($host)->create();
 
         $response = $this->get(
-            '/api/offices?host_id='.$host->id
+            '/api/offices?host_id=' . $host->id
         );
         $response->assertOk();
-        $response->assertJsonCount(1,'data');
-        $this->assertEquals($office->id,$response->json('data')[0]['id']);
+        $response->assertJsonCount(1, 'data');
+        $this->assertEquals($office->id, $response->json('data')[0]['id']);
     }
 
     public function itFiltersByUserId()
@@ -67,11 +70,11 @@ class OfficesControllerTest extends TestCase
         Reservation::factory()->for($office)->for($user)->create();
 
         $response = $this->get(
-            '/api/offices?user_id='.$user->id
+            '/api/offices?user_id=' . $user->id
         );
         $response->assertOk();
-        $response->assertJsonCount(1,'data');
-        $this->assertEquals($office->id,$response->json('data')[0]['id']);
+        $response->assertJsonCount(1, 'data');
+        $this->assertEquals($office->id, $response->json('data')[0]['id']);
     }
 
 
@@ -86,11 +89,11 @@ class OfficesControllerTest extends TestCase
         $office->images()->create(['path' => 'image.jpg']);
 
         $response = $this->get('/api/offices');
-       
+
         $response->assertOk()
-                ->assertJsonCount(1, 'data.0.tags')
-                ->assertJsonCount(1, 'data.0.images')
-                ->assertJsonPath('data.0.user.id', $user->id);
+            ->assertJsonCount(1, 'data.0.tags')
+            ->assertJsonCount(1, 'data.0.images')
+            ->assertJsonPath('data.0.user.id', $user->id);
     }
 
     /**
@@ -101,7 +104,7 @@ class OfficesControllerTest extends TestCase
         $office = Office::factory()->create();
 
         Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_ACTIVE]);
-        Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_CANCELLED]);
+        Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_CANCALLED]);
 
         $response = $this->get('/api/offices');
 
