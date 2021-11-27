@@ -22,21 +22,24 @@ class OfficeController extends Controller
     public function index(): JsonResource
     {
         $offices = Office::query()
-            ->when(request('user_id') && auth()->user() && request('user_id') == auth()->id(),
-                fn($builder) => $builder,
-                fn($builder) => $builder->where('approval_status', Office::APPROVAL_APPROVED)->where('hidden', false)
+            ->when(
+                request('user_id') && auth()->user() && request('user_id') == auth()->id(),
+                fn ($builder) => $builder,
+                fn ($builder) => $builder->where('approval_status', Office::APPROVAL_APPROVED)->where('hidden', false)
             )
-            ->when(request('user_id'), fn($builder) => $builder->whereUserId(request('user_id')))
-            ->when(request('visitor_id'),
-                fn($builder) => $builder->whereRelation('reservations', 'user_id', '=', request('visitor_id'))
+            ->when(request('user_id'), fn ($builder) => $builder->whereUserId(request('user_id')))
+            ->when(
+                request('visitor_id'),
+                fn ($builder) => $builder->whereRelation('reservations', 'user_id', '=', request('visitor_id'))
             )
             ->when(
                 request('lat') && request('lng'),
-                fn($builder) => $builder->nearestTo(request('lat'), request('lng')),
-                fn($builder) => $builder->orderBy('id', 'ASC')
+                fn ($builder) => $builder->nearestTo(request('lat'), request('lng')),
+                fn ($builder) => $builder->orderBy('id', 'ASC')
             )
-            ->when(request('tags'),
-                fn($builder) => $builder->whereHas(
+            ->when(
+                request('tags'),
+                fn ($builder) => $builder->whereHas(
                     'tags',
                     fn ($builder) => $builder->whereIn('id', request('tags')),
                     '=',
@@ -44,7 +47,7 @@ class OfficeController extends Controller
                 )
             )
             ->with(['images', 'tags', 'user'])
-            ->withCount(['reservations' => fn($builder) => $builder->whereStatus(Reservation::STATUS_ACTIVE)])
+            ->withCount(['reservations' => fn ($builder) => $builder->whereStatus(Reservation::STATUS_ACTIVE)])
             ->paginate(20);
 
         return OfficeResource::collection(
@@ -54,7 +57,7 @@ class OfficeController extends Controller
 
     public function show(Office $office): JsonResource
     {
-        $office->loadCount(['reservations' => fn($builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
+        $office->loadCount(['reservations' => fn ($builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
             ->load(['images', 'tags', 'user']);
 
         return OfficeResource::make($office);
@@ -62,7 +65,8 @@ class OfficeController extends Controller
 
     public function create(): JsonResource
     {
-        abort_unless(auth()->user()->tokenCan('office.create'),
+        abort_unless(
+            auth()->user()->tokenCan('office.create'),
             Response::HTTP_FORBIDDEN
         );
 
@@ -95,7 +99,8 @@ class OfficeController extends Controller
 
     public function update(Office $office): JsonResource
     {
-        abort_unless(auth()->user()->tokenCan('office.update'),
+        abort_unless(
+            auth()->user()->tokenCan('office.update'),
             Response::HTTP_FORBIDDEN
         );
 
@@ -128,7 +133,8 @@ class OfficeController extends Controller
 
     public function delete(Office $office)
     {
-        abort_unless(auth()->user()->tokenCan('office.delete'),
+        abort_unless(
+            auth()->user()->tokenCan('office.delete'),
             Response::HTTP_FORBIDDEN
         );
 
