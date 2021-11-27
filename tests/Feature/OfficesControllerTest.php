@@ -6,8 +6,11 @@ use App\Models\Office;
 use App\Models\Reservation;
 use App\Models\Tag;
 use App\Models\User;
+use Facade\FlareClient\Http\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Notifications\Notification;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class OfficesControllerTest extends TestCase
@@ -143,7 +146,7 @@ class OfficesControllerTest extends TestCase
             ->assertJsonPath('data.1.title', 'Torres Vedras');
     }
 
-      /**
+    /**
      * @test
      */
     public function itCreatesAnOffice()
@@ -174,7 +177,7 @@ class OfficesControllerTest extends TestCase
         Notification::assertSentTo($admin, OfficePendingApproval::class);
     }
 
-        /**
+    /**
      * @test
      */
     public function itDoesntAllowCreatingIfScopeIsNotProvided()
@@ -210,5 +213,70 @@ class OfficesControllerTest extends TestCase
         $this->assertIsArray($response->json('data')[0]['images']);
         $this->assertCount(1, $response->json('data')[0]['tags']);
         $this->assertEquals($user->id, $response->json('data')['user']['id']);
+    }
+
+
+    public function itUpdatesAnOffice()
+    {
+        $user = User::factory()->create();
+        $tags = Tag::factory(3)->create();
+        $office = Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tags);
+
+        $this->actingAs($user);
+
+        $anotherTag = Tag::factory()->create();
+
+        $response = $this->putJson('/offices/' . $office->id, [
+            'title' => 'Amazing Office',
+            'tags' => [$tags[0]->id, $anotherTag->id]
+        ]);
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data.tags')
+            ->assertJsonPath('data.tags.0.id', $tags[0]->id)
+            ->assertJsonPath('data.tags.1.id', $anotherTag->id)
+            ->assertJsonPath('data.title', 'Amazing Office');
+    }
+
+    public function itDoesntUpdateOfficeThatDoesntBelongToUser()
+    {
+        $user = User::factory()->create();
+        $anotherUser = User::factory()->create();
+        $office = Office::factory()->for($anotherUser)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/offices/' . $office->id, [
+            'title' => 'Amazing Office'
+        ]);
+
+        $response->assertStatus(Response::HTTP_FORBIDDEN);
+    }
+
+    public function itMarksTheOfficeAsPendingIfDirty()
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $office = Office::factory()->for($user)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/offices/' . $office->id, [
+            'lat' => 40.74051727562952
+        ]);
+
+        $response->assertOk();
+
+        $this->assertDatabaseHas('offices', [
+            'id' => $office->id,
+            'approval_status' => Office::APPROVAL_PENDING,
+        ]);
+
+        Notification::assertSentTo($admin, OfficePendingApproval::class);
     }
 }
