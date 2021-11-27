@@ -138,4 +138,28 @@ class OfficesControllerTest extends TestCase
             ->assertJsonPath('data.0.title', 'Leiria')
             ->assertJsonPath('data.1.title', 'Torres Vedras');
     }
+    public function itShowsTheOffice()
+    {
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create();
+
+        $office =  Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tag);
+        $office->images()->create(['path' => 'image.jpg']);
+
+
+        Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_ACTIVE]);
+        Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_CANCALLED]);
+
+
+        $response = $this->get('/api/offices/' . $office->id);
+
+        $this->assertEquals(1, $response->json('data')['resrvation_count']);
+        $this->assertIsArray($response->json('data')[0]['tags']);
+        $this->assertCount(1, $response->json('data')[0]['tags']);
+        $this->assertIsArray($response->json('data')[0]['images']);
+        $this->assertCount(1, $response->json('data')[0]['tags']);
+        $this->assertEquals($user->id, $response->json('data')['user']['id']);
+    }
 }
